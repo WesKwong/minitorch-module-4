@@ -1,0 +1,56 @@
+name: Autograding Tests
+'on':
+- workflow_dispatch
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Style
+      id: style
+      uses: classroom-resources/autograding-python-grader@v1
+      with:
+        timeout: 10
+        setup-command: sudo -H pip3 install -qr requirements.txt; sudo -H pip3 install
+          darglint==1.8.0; sudo -H pip3 install flake8==5.0.4
+    - name: Task 4.1
+      id: task-4-1
+      uses: classroom-resources/autograding-python-grader@v1
+      with:
+        timeout: 10
+        setup-command: sudo -H pip3 install -qr requirements.txt
+    - name: Task 4.2
+      id: task-4-2
+      uses: classroom-resources/autograding-python-grader@v1
+      with:
+        timeout: 10
+        setup-command: sudo -H pip3 install -qr requirements.txt
+    - name: Task 4.3
+      id: task-4-3
+      uses: classroom-resources/autograding-python-grader@v1
+      with:
+        timeout: 10
+        setup-command: sudo -H pip3 install -qr requirements.txt
+    - name: Task 4.4
+      id: task-4-4
+      uses: classroom-resources/autograding-python-grader@v1
+      with:
+        timeout: 10
+        setup-command: sudo -H pip3 install -qr requirements.txt
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        STYLE_RESULTS: "${{steps.style.outputs.result}}"
+        TASK-4-1_RESULTS: "${{steps.task-4-1.outputs.result}}"
+        TASK-4-2_RESULTS: "${{steps.task-4-2.outputs.result}}"
+        TASK-4-3_RESULTS: "${{steps.task-4-3.outputs.result}}"
+        TASK-4-4_RESULTS: "${{steps.task-4-4.outputs.result}}"
+      with:
+        runners: style,task-4-1,task-4-2,task-4-3,task-4-4
