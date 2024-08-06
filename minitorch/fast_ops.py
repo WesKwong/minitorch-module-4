@@ -159,7 +159,15 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 3.1.
+        for i in prange(len(out)):
+            out_index = np.zeros_like(out_shape)
+            in_index = np.zeros_like(in_shape)
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            in_data = in_storage[index_to_position(in_index, in_strides)]
+            out_data = fn(in_data)
+            out[index_to_position(out_index, out_strides)] = out_data
 
     return njit(parallel=True)(_map)  # type: ignore
 
@@ -197,7 +205,18 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 3.1.
+        for i in prange(len(out)):
+            out_index = np.zeros_like(out_shape)
+            a_index = np.zeros_like(a_shape)
+            b_index = np.zeros_like(b_shape)
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+            a_data = a_storage[index_to_position(a_index, a_strides)]
+            b_data = b_storage[index_to_position(b_index, b_strides)]
+            out_data = fn(a_data, b_data)
+            out[index_to_position(out_index, out_strides)] = out_data
 
     return njit(parallel=True)(_zip)  # type: ignore
 
@@ -230,7 +249,18 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # TODO: Implement for Task 3.1.
+        # raise NotImplementedError("Need to implement for Task 3.1")
+        for i in prange(len(out)):
+            out_index = np.zeros_like(out_shape)
+            a_index = np.zeros_like(a_shape)
+            to_index(i, out_shape, out_index)
+            a_index = out_index.copy()
+            for j in range(a_shape[reduce_dim]):
+                a_index[reduce_dim] = j
+                a_data = a_storage[index_to_position(a_index, a_strides)]
+                out_data = fn(out[i], a_data)
+                out[i] = out_data
 
     return njit(parallel=True)(_reduce)  # type: ignore
 
@@ -279,7 +309,31 @@ def _tensor_matrix_multiply(
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
-    raise NotImplementedError("Need to include this file from past assignment.")
+    # TODO: Implement for Task 3.2.
+    # raise NotImplementedError("Need to implement for Task 3.2")
+    for i in prange(len(out)):
+        out_index = np.zeros_like(out_shape)
+        to_index(i, out_shape, out_index)
+        a_index = np.zeros_like(a_shape)
+        b_index = np.zeros_like(b_shape)
+        a_big_shape = np.zeros_like(out_shape)
+        b_big_shape = np.zeros_like(out_shape)
+        a_big_shape[-1] = a_shape[-1]
+        b_big_shape[-2] = b_shape[-2]
+        a_big_index = np.zeros_like(out_shape)
+        b_big_index = np.zeros_like(out_shape)
+        a_big_index[:] = out_index[:]
+        b_big_index[:] = out_index[:]
+        out_data = 0
+        for j in range(a_shape[-1]):
+            a_big_index[-1] = j
+            b_big_index[-2] = j
+            broadcast_index(a_big_index, a_big_shape, a_shape, a_index)
+            broadcast_index(b_big_index, b_big_shape, b_shape, b_index)
+            a_data = a_storage[index_to_position(a_index, a_strides)]
+            b_data = b_storage[index_to_position(b_index, b_strides)]
+            out_data += a_data * b_data
+        out[index_to_position(out_index, out_strides)] = out_data
 
 
 tensor_matrix_multiply = njit(parallel=True, fastmath=True)(_tensor_matrix_multiply)
