@@ -1,4 +1,5 @@
 from typing import Tuple
+from itertools import product
 
 import numpy as np
 from numba import njit, prange
@@ -92,14 +93,13 @@ def _tensor_conv1d(
         weight_index[0] = current_out_channel
         out_value = 0
         offset = - (kw - 1) if reverse else 0
-        for c in range(in_channels):
-            for k in range(kw):
-                weight_index[1] = c
-                weight_index[2] = k
+        for chan_idx in range(in_channels):
+            for width_idx in range(kw):
+                weight_index[1], weight_index[2] = chan_idx, width_idx
                 weight_pos = index_to_position(weight_index, weight_strides)
                 weight_value = weight[weight_pos]
-                input_index[1] = c
-                input_index[2] = current_out_width + offset + k
+                input_index[1] = chan_idx
+                input_index[2] = current_out_width + offset + width_idx
                 input_value = 0
                 if 0 <= input_index[2] < width:
                     input_pos = index_to_position(input_index, input_strides)
@@ -232,7 +232,33 @@ def _tensor_conv2d(
     s20, s21, s22, s23 = s2[0], s2[1], s2[2], s2[3]
 
     # TODO: Implement for Task 4.2.
-    raise NotImplementedError("Need to implement for Task 4.2")
+    # raise NotImplementedError("Need to implement for Task 4.2")
+    for i in prange(out_size):
+        out_idx = np.zeros_like(out_shape)
+        to_index(i, out_shape, out_idx)
+        cur_batch, cur_out_chan, cur_height, cur_width = out_idx
+        in_idx = np.zeros_like(input_shape)
+        weight_idx = np.zeros_like(weight_shape)
+        in_idx[0], weight_idx[0] = cur_batch, cur_out_chan
+        offset_h = - (kh - 1) if reverse else 0
+        offset_w = - (kw - 1) if reverse else 0
+        out_value = 0
+        for in_chan_idx in range(in_channels):
+            for h_idx in range(kh):
+                for w_idx in range(kw):
+                    weight_idx[1], weight_idx[2], weight_idx[3] = in_chan_idx, h_idx, w_idx
+                    weight_pos = index_to_position(weight_idx, weight_strides)
+                    weight_value = weight[weight_pos]
+                    in_idx[1] = in_chan_idx
+                    in_idx[2] = cur_height + offset_h + h_idx
+                    in_idx[3] = cur_width + offset_w + w_idx
+                    in_value = 0
+                    if 0 <= in_idx[2] < height and 0 <= in_idx[3] < width:
+                        in_pos = index_to_position(in_idx, input_strides)
+                        in_value = input[in_pos]
+                    out_value += weight_value * in_value
+        out_pos = index_to_position(out_idx, out_strides)
+        out[out_pos] = out_value
 
 
 tensor_conv2d = njit(parallel=True, fastmath=True)(_tensor_conv2d)
