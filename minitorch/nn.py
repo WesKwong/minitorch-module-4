@@ -77,13 +77,19 @@ class Max(Function):
     def forward(ctx: Context, input: Tensor, dim: Tensor) -> Tensor:
         "Forward of max should be max reduction"
         # TODO: Implement for Task 4.4.
-        raise NotImplementedError("Need to implement for Task 4.4")
+        # raise NotImplementedError("Need to implement for Task 4.4")
+        max_tensor = max_reduce(input, int(dim.item()))
+        argmax_tensor = max_tensor == input
+        ctx.save_for_backward(argmax_tensor)
+        return max_tensor
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         "Backward of max should be argmax (see above)"
         # TODO: Implement for Task 4.4.
-        raise NotImplementedError("Need to implement for Task 4.4")
+        # raise NotImplementedError("Need to implement for Task 4.4")
+        argmax_tensor, = ctx.saved_values
+        return argmax_tensor * grad_output, 0.0
 
 
 def max(input: Tensor, dim: int) -> Tensor:
@@ -106,7 +112,10 @@ def softmax(input: Tensor, dim: int) -> Tensor:
         softmax tensor
     """
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    # raise NotImplementedError("Need to implement for Task 4.4")
+    exp_tensor = input.exp()
+    sum_exp = exp_tensor.sum(dim)
+    return exp_tensor / sum_exp
 
 
 def logsoftmax(input: Tensor, dim: int) -> Tensor:
@@ -125,7 +134,11 @@ def logsoftmax(input: Tensor, dim: int) -> Tensor:
          log of softmax tensor
     """
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    # raise NotImplementedError("Need to implement for Task 4.4")
+    exp_tensor = input.exp()
+    sum_exp = exp_tensor.sum(dim)
+    log_sum_exp = sum_exp.log()
+    return input - log_sum_exp
 
 
 def maxpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
@@ -141,7 +154,11 @@ def maxpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
     """
     batch, channel, height, width = input.shape
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    # raise NotImplementedError("Need to implement for Task 4.4")
+    new_tensor, new_height, new_width = tile(input, kernel)
+    pooled_tensor = max(new_tensor, 4)
+    return pooled_tensor.contiguous().view(batch, channel, new_height, new_width)
+
 
 
 def dropout(input: Tensor, rate: float, ignore: bool = False) -> Tensor:
@@ -157,4 +174,9 @@ def dropout(input: Tensor, rate: float, ignore: bool = False) -> Tensor:
         tensor with randoom positions dropped out
     """
     # TODO: Implement for Task 4.4.
-    raise NotImplementedError("Need to implement for Task 4.4")
+    # raise NotImplementedError("Need to implement for Task 4.4")
+    if ignore:
+        return input
+    mask = rand(input.shape, input.backend)
+    mask = mask > rate
+    return input * mask
